@@ -129,12 +129,65 @@ static int show_credits(void)
     return 0;
 }
 
+static char* read_file_content(const char* filename)
+{
+    int fd = open(filename, O_RDONLY);
+    if (fd < 0) {
+        return NULL;
+    }
+
+    /* Get file size */
+    off_t size = lseek(fd, 0, SEEK_END);
+    if (size <= 0 || size > 65536) { /* Limit to 64KB */
+        close(fd);
+        return NULL;
+    }
+
+    /* Reset to beginning */
+    lseek(fd, 0, SEEK_SET);
+
+    /* Allocate buffer and read file */
+    char* buffer = malloc(size + 1);
+    if (!buffer) {
+        close(fd);
+        return NULL;
+    }
+
+    ssize_t bytes_read = read(fd, buffer, size);
+    close(fd);
+
+    if (bytes_read != size) {
+        free(buffer);
+        return NULL;
+    }
+
+    buffer[size] = '\0'; /* Null terminate */
+    return buffer;
+}
+
 static int show_legal(void)
 {
-    if (plugin_load(VIEWERS_DIR "/text_viewer.rock", "/.rockbox/docs/COPYING.txt") != PLUGIN_OK)
+    char* copying_text = read_file_content("/sdcard/.rockbox/docs/COPYING.txt");
+    char* licenses_text = read_file_content("/sdcard/.rockbox/docs/LICENSES.txt");
+
+    if (copying_text) {
+        char* copying_params[] = { "COPYING", copying_text };
+        if (plugin_load(VIEWERS_DIR "/view_text.rock", copying_params) != PLUGIN_OK)
+            show_info();
+        free(copying_text);
+    } else {
         show_info();
-    if (plugin_load(VIEWERS_DIR "/text_viewer.rock", "/.rockbox/docs/LICENSES.txt") != PLUGIN_OK)
+    }
+
+    if (licenses_text) {
+        char* licenses_params[] = { "LICENSES", licenses_text };
+        if (plugin_load(VIEWERS_DIR "/view_text.rock", licenses_params) != PLUGIN_OK)
+            show_info();
+        free(licenses_text);
+    } else {
         show_info();
+    }
+
     return 0;
 }
 

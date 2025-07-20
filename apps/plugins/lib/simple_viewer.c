@@ -139,6 +139,12 @@ static int init_view(struct view_info *info,
 {
     rb->viewport_set_defaults(&info->vp, SCREEN_MAIN);
     info->pf = rb->font_get(rb->screens[SCREEN_MAIN]->getuifont());
+
+    /* Safety check for font */
+    if (!info->pf) {
+        return -1;
+    }
+
     info->display_lines = info->vp.height / info->pf->height;
 
     info->title = title;
@@ -251,12 +257,29 @@ static void scroll_to_bottom(struct view_info *info)
 int view_text(const char *title, const char *text)
 {
     struct view_info info;
+
+    /* Custom button mapping for Android D-pad */
+    static const struct button_mapping android_dpad_ctx[] = {
+        { PLA_UP,               BUTTON_DPAD_UP|BUTTON_REL,          BUTTON_NONE },
+        { PLA_DOWN,             BUTTON_DPAD_DOWN|BUTTON_REL,        BUTTON_NONE },
+        { PLA_LEFT,             BUTTON_DPAD_LEFT|BUTTON_REL,        BUTTON_NONE },
+        { PLA_RIGHT,            BUTTON_DPAD_RIGHT|BUTTON_REL,       BUTTON_NONE },
+    };
+
     const struct button_mapping *view_contexts[] = {
+        android_dpad_ctx,
         pla_main_ctx,
     };
     int button;
 
-    init_view(&info, title, text);
+    /* Safety check for null parameters */
+    if (!text) {
+        return PLUGIN_ERROR;
+    }
+
+    if (init_view(&info, title, text) < 0) {
+        return PLUGIN_ERROR;
+    }
     draw_text(&info);
 
     /* wait for keypress */
@@ -264,15 +287,18 @@ int view_text(const char *title, const char *text)
     {
         button = pluginlib_getaction(TIMEOUT_BLOCK, view_contexts,
                                      ARRAYLEN(view_contexts));
+
         switch (button)
         {
         case PLA_UP:
+        case ACTION_STD_PREV:
 #if (CONFIG_KEYPAD == IPOD_1G2G_PAD) \
     || (CONFIG_KEYPAD == IPOD_3G_PAD) \
     || (CONFIG_KEYPAD == IPOD_4G_PAD)
             return PLUGIN_OK;
 #endif
         case PLA_UP_REPEAT:
+        case ACTION_STD_PREVREPEAT:
 #ifdef HAVE_SCROLLWHEEL
         case PLA_SCROLL_BACK:
         case PLA_SCROLL_BACK_REPEAT:
@@ -280,13 +306,16 @@ int view_text(const char *title, const char *text)
             scroll_up(&info, 1);
             break;
         case PLA_DOWN:
+        case ACTION_STD_NEXT:
         case PLA_DOWN_REPEAT:
+        case ACTION_STD_NEXTREPEAT:
 #ifdef HAVE_SCROLLWHEEL
         case PLA_SCROLL_FWD:
         case PLA_SCROLL_FWD_REPEAT:
 #endif
             scroll_down(&info, 1);
             break;
+
         case PLA_LEFT:
 #if (CONFIG_KEYPAD == IPOD_1G2G_PAD) \
     || (CONFIG_KEYPAD == IPOD_3G_PAD) \

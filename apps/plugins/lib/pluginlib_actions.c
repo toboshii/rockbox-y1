@@ -110,7 +110,8 @@ const struct button_mapping pla_main_ctx[] =
     || (CONFIG_KEYPAD == HM801_PAD) \
     || (CONFIG_KEYPAD == SONY_NWZ_PAD) \
     || (CONFIG_KEYPAD == CREATIVE_ZEN_PAD) \
-    || (CONFIG_KEYPAD == AGPTEK_ROCKER_PAD))
+    || (CONFIG_KEYPAD == AGPTEK_ROCKER_PAD) \
+    || (CONFIG_KEYPAD == ANDROID_PAD))
     { PLA_UP,               BUTTON_UP,                          BUTTON_NONE },
     { PLA_DOWN,             BUTTON_DOWN,                        BUTTON_NONE },
     { PLA_LEFT,             BUTTON_LEFT,                        BUTTON_NONE },
