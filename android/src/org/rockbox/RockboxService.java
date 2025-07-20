@@ -24,7 +24,9 @@ package org.rockbox;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
@@ -170,8 +172,19 @@ public class RockboxService extends Service
             {
                 final int BUFFER = 8*1024;
                 String rockboxDirPath = "/sdcard/.rockbox";
-                String rockboxCreditsPath = "/sdcard/.rockbox/rocks/viewers";
+                String rockboxCreditsPath = "/data/data/org.rockbox/app_rockbox/rockbox/rocks/viewers";
                 String rockboxSdDirPath = "/sdcard/.rockbox";
+                String sdViewersPath = "/sdcard/.rockbox/rocks/viewers";
+
+                /* Check if credits.rock exists in internal app directory */
+                File internalCreditsFile = new File(rockboxCreditsPath, "credits.rock");
+                File sdViewersDir = new File(sdViewersPath);
+
+                /* If internal credits file doesn't exist and SD viewers directory exists, copy it */
+                if (!internalCreditsFile.exists() && sdViewersDir.exists() && sdViewersDir.isDirectory()) {
+                    Logger.d("Internal credits.rock not found, copying viewers from SD card");
+                    copyViewersFolder(sdViewersPath, rockboxCreditsPath);
+                }
 
                 /* the following block unzips libmisc.so, which contains the files 
                  * we ship, such as themes. It's needed to put it into a .so file
@@ -498,5 +511,46 @@ public class RockboxService extends Service
                     .show();
             }
         });
+    }
+
+    private void copyViewersFolder(String sourceDir, String destDir) {
+        File srcDir = new File(sourceDir);
+        File destDirFile = new File(destDir);
+
+        if (!srcDir.exists() || !srcDir.isDirectory()) {
+            Logger.d("Source viewers directory not found: " + sourceDir);
+            return;
+        }
+
+        if (!destDirFile.exists()) {
+            destDirFile.mkdirs();
+        }
+
+        File[] files = srcDir.listFiles();
+        if (files == null) {
+            Logger.d("Error listing files in source viewers directory: " + sourceDir);
+            return;
+        }
+
+        for (File file : files) {
+            if (file.isDirectory()) {
+                copyViewersFolder(file.getAbsolutePath(), destDirFile.getAbsolutePath() + File.separator + file.getName());
+            } else {
+                try {
+                    BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
+                    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(new File(destDirFile, file.getName())));
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    while ((bytesRead = bis.read(buffer)) != -1) {
+                        bos.write(buffer, 0, bytesRead);
+                    }
+                    bos.flush();
+                    bos.close();
+                    bis.close();
+                } catch (IOException e) {
+                    Logger.d("Error copying file: " + file.getAbsolutePath(), e);
+                }
+            }
+        }
     }
 }
