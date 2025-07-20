@@ -34,6 +34,10 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.ViewConfiguration;
 import android.os.Vibrator;
+import android.util.Log;
+import android.os.Handler;
+import android.os.Looper;
+import eu.chainfire.libsuperuser.Shell;
 
 public class RockboxFramebuffer extends SurfaceView 
                                  implements SurfaceHolder.Callback
@@ -44,6 +48,24 @@ public class RockboxFramebuffer extends SurfaceView
 
     private static final int[] duration_mapping = {
         0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50
+    };
+
+    private static final int CENTER_KEYCODE = KeyEvent.KEYCODE_ENTER; // 66
+    private static final long LONG_PRESS_DURATION_MS = 1000;
+    private Handler longPressHandler = new Handler(Looper.getMainLooper());
+    private boolean centerLongPressTriggered = false;
+    private Runnable centerLongPressRunnable = new Runnable() {
+        @Override
+        public void run() {
+            centerLongPressTriggered = true;
+            Log.d("RockboxButton", "Center long-press detected, sending POWER keyevent as root");
+            try {
+                Shell.SU.run("input keyevent POWER");
+                Log.d("RockboxButton", "POWER keyevent sent as root");
+            } catch (Exception e) {
+                Log.e("RockboxButton", "Failed to send POWER keyevent as root: " + e.getMessage());
+            }
+        }
     };
 
     /* first stage init; needs to run from a thread that has a Looper 
@@ -116,6 +138,11 @@ public class RockboxFramebuffer extends SurfaceView
 
     public boolean onKeyDown(int keyCode, KeyEvent event)
     {
+        // Center button long-press detection
+        if ((keyCode == CENTER_KEYCODE) && event.getRepeatCount() == 0) {
+            centerLongPressTriggered = false;
+            longPressHandler.postDelayed(centerLongPressRunnable, LONG_PRESS_DURATION_MS);
+        }
         /* Handle repeat events */
         if (event.getRepeatCount() > 0)
         {
@@ -129,6 +156,10 @@ public class RockboxFramebuffer extends SurfaceView
 
     public boolean onKeyUp(int keyCode, KeyEvent event)
     {
+        // Cancel long-press if released before trigger
+        if (keyCode == CENTER_KEYCODE) {
+            longPressHandler.removeCallbacks(centerLongPressRunnable);
+        }
         return buttonHandler(keyCode, false);
     }
  

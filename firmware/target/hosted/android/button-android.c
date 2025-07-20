@@ -89,7 +89,7 @@ Java_org_rockbox_RockboxFramebuffer_buttonHandler(JNIEnv*env, jclass class,
 
     unsigned button = 0;
 
-        /* Trigger vibration for DPAD buttons with adaptive intensity */
+    /* Trigger vibration for DPAD buttons with adaptive intensity */
     if ((keycode == KEYCODE_DPAD_UP || keycode == KEYCODE_DPAD_DOWN) && global_settings.wheel_vibration_intensity > 0)
     {
         long current_time = current_tick;
