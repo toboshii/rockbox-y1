@@ -59,12 +59,17 @@ public class RockboxFramebuffer extends SurfaceView
         public void run() {
             centerLongPressTriggered = true;
             Log.d("RockboxButton", "Center long-press detected, sending POWER keyevent as root");
-            try {
-                Shell.SU.run("input keyevent POWER");
-                Log.d("RockboxButton", "POWER keyevent sent as root");
-            } catch (Exception e) {
-                Log.e("RockboxButton", "Failed to send POWER keyevent as root: " + e.getMessage());
-            }
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Shell.SU.run("input keyevent POWER");
+                        Log.d("RockboxButton", "POWER keyevent sent as root");
+                    } catch (Exception e) {
+                        Log.e("RockboxButton", "Failed to send POWER keyevent as root: " + e.getMessage());
+                    }
+                }
+            }).start();
         }
     };
 
