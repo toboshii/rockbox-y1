@@ -32,6 +32,10 @@ jobs:
       run: |
         cd android/build
         make
+    - name: make classes
+      run: |
+        cd android/build
+        make classes
     - name: make zip
       run: |
         cd android/build

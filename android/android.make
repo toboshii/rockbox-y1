@@ -87,7 +87,7 @@ RES		:= $(wildcard $(ANDROID_DIR)/res/*/*)
 
 CLEANOBJS += bin gen libs data
 
-JAVAC_OPTS += -source 1.7 -target 1.7 -bootclasspath $(ANDROID_PLATFORM)/android.jar -implicit:none -classpath $(ANDROID_PLATFORM)/android.jar:$(CLASSPATH)
+JAVAC_OPTS += -source 1.7 -target 1.7 -bootclasspath $(ANDROID_PLATFORM)/android.jar -implicit:none -classpath $(ANDROID_PLATFORM)/android.jar:$(CLASSPATH):$(ANDROID_DIR)/gen
 
 .PHONY:
 $(MANIFEST): $(MANIFEST_SRC) $(DIRS)
@@ -99,7 +99,7 @@ $(R_JAVA) $(AP_): $(MANIFEST) $(RES) | $(DIRS)
 		-I $(ANDROID_PLATFORM)/android.jar -F $(AP_)
 
 $(CLASSPATH)/$(PACKAGE_PATH)/R.class: $(R_JAVA)
-	$(call PRINTS,JAVAC $(subst $(ROOTDIR)/,,$<))javac -d $(BUILDDIR)/bin \
+	$(call PRINTS,JAVAC $(subst $(ROOTDIR)/,,$<))javac -d $(CLASSPATH) \
 		$(JAVAC_OPTS) -sourcepath $(ANDROID_DIR)/gen $<
 
 $(CLASSPATH)/$(PACKAGE_PATH)/%.class: $(ANDROID_DIR)/src/$(PACKAGE_PATH)/%.java $(CLASSPATH)/$(PACKAGE_PATH)/R.class
