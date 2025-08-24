@@ -37,6 +37,7 @@ import org.rockbox.Helper.RunForegroundManager;
 import org.rockbox.Helper.BrightnessController;
 import org.rockbox.Helper.ScreenTimeoutController;
 import org.rockbox.Helper.ExternalAppsManager;
+import org.rockbox.monitors.TelephonyMonitor;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Service;
@@ -68,6 +69,7 @@ public class RockboxService extends Service
     private Activity mCurrentActivity = null;
     private RunForegroundManager mFgRunner;
     private MediaButtonReceiver mMediaButtonReceiver;
+    private TelephonyMonitor mTelephonyMonitor;
     private ResultReceiver mResultReceiver;
     
     /* Config file check mechanism */
@@ -93,6 +95,13 @@ public class RockboxService extends Service
         instance = this;
         mMediaButtonReceiver = new MediaButtonReceiver(this);
         mFgRunner = new RunForegroundManager(this);
+        
+        // Initialize telephony monitoring safely from the service
+        try {
+            mTelephonyMonitor = new TelephonyMonitor(this);
+        } catch (Exception e) {
+            Log.e("RockboxService", "Failed to initialize TelephonyMonitor: " + e.getMessage());
+        }
         
         // Initialize config check mechanism
         mConfigCheckHandler = new Handler(Looper.getMainLooper());

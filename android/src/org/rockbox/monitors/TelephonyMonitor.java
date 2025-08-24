@@ -30,17 +30,34 @@ public class TelephonyMonitor
 {
     public TelephonyMonitor(Context c)
     {
-        final Handler handler = new Handler(c.getMainLooper());        
-        final TelephonyManager tm = (TelephonyManager)
-            c.getSystemService(Context.TELEPHONY_SERVICE);
-        handler.post(new Runnable()
-        {
-            @Override
-            public void run()
-            {   /* need to instantiate from a thread that has a Looper */
-                tm.listen(new RockboxCallStateListener(), PhoneStateListener.LISTEN_CALL_STATE);
+        try {
+            final Handler handler = new Handler(c.getMainLooper());        
+            final TelephonyManager tm = (TelephonyManager)
+                c.getSystemService(Context.TELEPHONY_SERVICE);
+            
+            // Check if TelephonyManager is available (some devices like tablets don't have it)
+            if (tm == null) {
+                android.util.Log.d("TelephonyMonitor", "TelephonyManager not available, skipping telephony monitoring");
+                return;
             }
-        });
+            
+            handler.post(new Runnable()
+            {
+                @Override
+                public void run()
+                {   /* need to instantiate from a thread that has a Looper */
+                    try {
+                        tm.listen(new RockboxCallStateListener(), PhoneStateListener.LISTEN_CALL_STATE);
+                    } catch (SecurityException e) {
+                        android.util.Log.d("TelephonyMonitor", "No permission to listen to call state: " + e.getMessage());
+                    } catch (Exception e) {
+                        android.util.Log.e("TelephonyMonitor", "Error setting up telephony listener: " + e.getMessage());
+                    }
+                }
+            });
+        } catch (Exception e) {
+            android.util.Log.e("TelephonyMonitor", "Error initializing TelephonyMonitor: " + e.getMessage());
+        }
     }
 
     private class RockboxCallStateListener extends PhoneStateListener

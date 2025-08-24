@@ -33,14 +33,9 @@ extern jobject RockboxService_instance;
 
 void telephony_init_device(void)
 {
-    JNIEnv e = *env_ptr;
-    jclass class = e->FindClass(env_ptr, "org/rockbox/monitors/TelephonyMonitor");
-    jmethodID constructor = e->GetMethodID(env_ptr, class,
-                                        "<init>",
-                                        "(Landroid/content/Context;)V");
-    e->NewObject(env_ptr, class,
-                    constructor,
-                    RockboxService_instance);
+    /* Skip telephony initialization on early startup to avoid fatal issues.
+     * This will be handled later by the Android service if needed. */
+    return;
 }
 
 JNIEXPORT void JNICALL
